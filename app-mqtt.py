@@ -6,7 +6,7 @@ import json
 app = Flask(__name__)
 
 # MQTT Configuration
-MQTT_BROKER = "host.docker.internal"  # Change to your MQTT broker address
+MQTT_BROKER = "test.mosquitto.org"  # Change to your MQTT broker address
 MQTT_PORT = 1883
 MQTT_TOPIC = "jamesh/face/verification"
 

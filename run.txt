@@ -1,0 +1,5 @@
+docker build -t my-mqtt-app .
+
+docker run -it --rm -p 5000:5000 my-mqtt-app
+
+docker run -d --name mqtt-broker --network mqtt-net -p 1883:1883 eclipse-mosquitto

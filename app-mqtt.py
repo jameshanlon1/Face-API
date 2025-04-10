@@ -32,7 +32,7 @@ def verify():
         returnObj = {"user": "UNKNOWN", "verified": False}
 
         # Compare faces using DeepFace
-        result = DeepFace.verify("face1.jpg", "./images/me1.jpg", model_name="Facenet", enforce_detection=False)
+        result = DeepFace.verify("face1.jpg", "./images/me1.jpg", model_name="ArcFace", enforce_detection=False)
 
         if result["verified"]:
             userName = "James"

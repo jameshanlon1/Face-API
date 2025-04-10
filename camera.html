@@ -5,9 +5,8 @@
   <title>Face Verification</title>
 </head>
 <body>
-  <h2>Face Verification with Camera</h2>
+  <h2>Live Face Verification</h2>
   <video id="video" width="300" height="225" autoplay></video><br>
-  <button onclick="captureAndSend()">Verify Face</button>
   <canvas id="canvas" width="300" height="225" style="display: none;"></canvas>
   <p id="result">Waiting for verification...</p>
 
@@ -17,15 +16,28 @@
     const resultText = document.getElementById('result');
     const context = canvas.getContext('2d');
 
+    let isVerifying = false;
+    let lastUser = null;
+
     // Ask for camera access
     navigator.mediaDevices.getUserMedia({ video: true })
       .then(stream => {
         video.srcObject = stream;
+        startAutoVerification();
       })
       .catch(err => {
         console.error("Camera access denied", err);
         alert("Enable camera to use this feature.");
       });
+
+    function startAutoVerification() {
+      setInterval(() => {
+        if (!isVerifying) {
+          isVerifying = true;
+          captureAndSend();
+        }
+      }, 5000); // every 5 seconds
+    }
 
     function captureAndSend() {
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -40,11 +52,24 @@
         .then(res => res.json())
         .then(data => {
           console.log(data);
-          resultText.innerText = data.verified ? `User Verified: ${data.user}` : "Verification failed.";
+          if (data.verified) {
+            if (data.user !== lastUser) {
+              lastUser = data.user;
+              resultText.innerText = `✅ Verified: ${data.user}`;
+            }
+          } else {
+            if (lastUser !== null) {
+              lastUser = null;
+              resultText.innerText = "❌ Not Verified";
+            }
+          }
         })
         .catch(err => {
           console.error("Error during verification:", err);
-          resultText.innerText = "Error occurred.";
+          resultText.innerText = "⚠️ Error occurred.";
+        })
+        .finally(() => {
+          isVerifying = false;
         });
       }, "image/jpeg");
     }

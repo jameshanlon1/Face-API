@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Face Verification</title>
+</head>
+<body>
+  <h2>Face Verification with Camera</h2>
+  <video id="video" width="300" height="225" autoplay></video><br>
+  <button onclick="captureAndSend()">Verify Face</button>
+  <canvas id="canvas" width="300" height="225" style="display: none;"></canvas>
+  <p id="result">Waiting for verification...</p>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const resultText = document.getElementById('result');
+    const context = canvas.getContext('2d');
+
+    // Ask for camera access
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        console.error("Camera access denied", err);
+        alert("Enable camera to use this feature.");
+      });
+
+    function captureAndSend() {
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => {
+        const formData = new FormData();
+        formData.append("image1", blob, "snapshot.jpg");
+
+        fetch("http://localhost:5000/verify", {
+          method: "POST",
+          body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+          console.log(data);
+          resultText.innerText = data.verified ? `User Verified: ${data.user}` : "Verification failed.";
+        })
+        .catch(err => {
+          console.error("Error during verification:", err);
+          resultText.innerText = "Error occurred.";
+        });
+      }, "image/jpeg");
+    }
+  </script>
+</body>
+</html>

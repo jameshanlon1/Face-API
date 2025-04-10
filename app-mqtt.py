@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from deepface import DeepFace
 import paho.mqtt.client as mqtt
 import json
@@ -56,6 +56,12 @@ def user():
         return jsonify(userObj)  
     except Exception as e:
         return jsonify({"error": str(e)})
+
+
+@app.route('/camera')
+def camera_page():
+    return send_from_directory('.', 'camera.html')        
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

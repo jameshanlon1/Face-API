@@ -8,6 +8,7 @@ import time
 from threading import Thread
 import io
 import base64
+from picamera2 import Picamera2
 
 # Try importing picamera - it should be available on Raspberry Pi
 try:
@@ -117,96 +118,6 @@ def continuous_verification():
 def index():
     return "Welcome to Raspberry Pi Face Verification Service!"
 
-@app.route('/capture', methods=['GET'])
-def capture_and_verify():
-    if not camera_available:
-        return jsonify({"error": "Camera not available on this device"}), 500
-        
-    try:
-        # Capture image
-        camera.capture('face1.jpg')
-        
-        # Verify the face
-        result = verify_face('face1.jpg')
-        
-        return jsonify(result)
-    except Exception as e:
-        error_response = {"user": "UNKNOWN", "verified": False, "error": str(e)}
-        mqtt_client.publish(MQTT_TOPIC, json.dumps(error_response))
-        return jsonify(error_response)
-
-@app.route('/continuous/start', methods=['GET'])
-def start_continuous():
-    global continuous_mode
-    
-    if not camera_available:
-        return jsonify({"error": "Camera not available on this device"}), 500
-    
-    if not continuous_mode:
-        continuous_mode = True
-        # Start the verification in a background thread
-        Thread(target=continuous_verification, daemon=True).start()
-        return jsonify({"status": "success", "message": "Continuous verification started"})
-    else:
-        return jsonify({"status": "info", "message": "Continuous verification was already running"})
-
-@app.route('/continuous/stop', methods=['GET'])
-def stop_continuous():
-    global continuous_mode
-    
-    continuous_mode = False
-    return jsonify({"status": "success", "message": "Continuous verification stopped"})
-
-@app.route('/user', methods=['GET'])
-def user():
-    try:
-        userObj = {'value': currentUser}
-        return jsonify(userObj)  
-    except Exception as e:
-        return jsonify({"error": str(e)})
-
-@app.route('/users', methods=['GET'])
-def list_users():
-    try:
-        users = [d for d in os.listdir(USER_IMAGES_DIR) if os.path.isdir(os.path.join(USER_IMAGES_DIR, d))]
-        return jsonify({"users": users})
-    except Exception as e:
-        return jsonify({"error": str(e)})
-
-@app.route('/add_user/<username>', methods=['GET'])
-def add_user_from_camera(username):
-    if not camera_available:
-        return jsonify({"error": "Camera not available on this device"}), 500
-        
-    try:
-        # Create user directory if it doesn't exist
-        user_dir = os.path.join(USER_IMAGES_DIR, username)
-        if not os.path.exists(user_dir):
-            os.makedirs(user_dir)
-        
-        # Generate a filename
-        image_count = len([f for f in os.listdir(user_dir) if f.endswith(('.jpg', '.jpeg', '.png'))])
-        filename = f"{username}_{image_count + 1}.jpg"
-        
-        # Capture and save the image
-        camera.capture(os.path.join(user_dir, filename))
-        
-        return jsonify({"status": "success", "message": f"Image captured and added for user {username}"})
-        
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/users/<username>', methods=['DELETE'])
-def delete_user(username):
-    try:
-        user_dir = os.path.join(USER_IMAGES_DIR, username)
-        if os.path.exists(user_dir):
-            shutil.rmtree(user_dir)
-            return jsonify({"status": "success", "message": f"User {username} deleted"})
-        else:
-            return jsonify({"status": "error", "message": f"User {username} not found"}), 404
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 @app.route('/camera')
 def camera_page():

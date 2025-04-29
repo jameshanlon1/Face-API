@@ -6,18 +6,9 @@ WORKDIR /
 
 # Update package lists and install required system dependencies
 RUN apt-get update && apt-get install -y \
-libcamera-dev \
-python3-libcamera \
-python3-kms++ \
-python3-pyqt5 \
-python3-prctl \
-libatlas-base-dev \
-ffmpeg \
-libsm6 \
-libxext6 \
-&& rm -rf /var/lib/apt/lists/*
+    libgl1 \
+    libglib2.0-0
 
-RUN pip install picamera2
 # Upgrade pip and install essential build tools
 RUN pip install --upgrade pip setuptools wheel
 
@@ -27,7 +18,7 @@ RUN pip install flask deepface
 RUN pip install tf-keras
 RUN pip install tflite-runtime
 RUN pip install paho-mqtt
-
+RUN pip install flask-cors
 
 
 # Copy the rest of your app into the container
@@ -37,4 +28,4 @@ COPY . .
 EXPOSE 5000
 
 # Command to run your app
-CMD ["python", "pi-camera.py"]
+CMD ["python", "verify-server.py"]

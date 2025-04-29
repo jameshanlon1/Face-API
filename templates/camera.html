@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Face Verification</title>
+</head>
+<body>
+
+<h1>Live Camera Stream</h1>
+
+<img id="mjpeg" src="/camera_feed" width="640" height="480" alt="Camera Stream"/>
+
+<canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+
+<p id="result">Waiting for verification...</p>
+
+<script>
+const video = document.getElementById('mjpeg');
+const canvas = document.getElementById('canvas');
+const resultText = document.getElementById('result');
+const context = canvas.getContext('2d');
+
+let isVerifying = false;
+let lastUser = null;
+
+    function startAutoVerification() {
+      setInterval(() => {
+        if (!isVerifying) {
+          isVerifying = false;
+          captureAndSend();
+        }
+      }, 5000); // every 5 seconds
+    }
+
+    function captureAndSend() {
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.src = video.src + "?t=" + new Date().getTime(); // force refresh
+
+  img.onload = () => {
+    try {
+      context.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => {
+        if (!blob) {
+          console.error("⚡ Canvas toBlob failed");
+          isVerifying = false;
+          return;
+        }
+        const formData = new FormData();
+        formData.append("image1", blob, "snapshot.jpg");
+
+        fetch("http://192.168.190.203:5000/verify", {
+          method: "POST",
+          body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+          console.log(data);
+          if (data.verified) {
+            resultText.innerText = `✅ Verified: ${data.user}`;
+          } else {
+            resultText.innerText = "❌ Not Verified";
+          }
+        })
+        .catch(err => {
+          console.error("Error during verification:", err);
+          resultText.innerText = "⚠️ Error occurred.";
+        })
+        .finally(() => {
+          isVerifying = false;
+        });
+
+      }, "image/jpeg");
+    } catch (e) {
+      console.error("⚡ drawImage crashed:", e);
+      isVerifying = false;
+    } finally {
+      // 👇 THIS IS CRITICAL
+      img.src = "";
+    }
+  };
+
+  img.onerror = (e) => {
+  console.error("⚡ img error:", e);
+  resultText.innerText = "⚠️ Camera error, retrying...";
+  isVerifying = false;
+  img.src = ""; // Cleanup
+};
+
+}
+
+startAutoVerification();
+  </script>
+</body>
+</html>

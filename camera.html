@@ -5,30 +5,23 @@
   <title>Face Verification</title>
 </head>
 <body>
-  <h2>Live Face Verification</h2>
-  <video id="video" width="300" height="225" autoplay></video><br>
-  <canvas id="canvas" width="300" height="225" style="display: none;"></canvas>
-  <p id="result">Waiting for verification...</p>
 
-  <script>
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const resultText = document.getElementById('result');
-    const context = canvas.getContext('2d');
+<h1>Live Camera Stream</h1>
 
-    let isVerifying = false;
-    let lastUser = null;
+<img id="mjpeg" src="/camera_feed" width="640" height="480" alt="Camera Stream"/>
 
-    // Ask for camera access
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => {
-        video.srcObject = stream;
-        startAutoVerification();
-      })
-      .catch(err => {
-        console.error("Camera access denied", err);
-        alert("Enable camera to use this feature.");
-      });
+<canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+
+<p id="result">Waiting for verification...</p>
+
+<script>
+const video = document.getElementById('mjpeg');
+const canvas = document.getElementById('canvas');
+const resultText = document.getElementById('result');
+const context = canvas.getContext('2d');
+
+let isVerifying = false;
+let lastUser = null;
 
     function startAutoVerification() {
       setInterval(() => {
@@ -40,39 +33,49 @@
     }
 
     function captureAndSend() {
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob(blob => {
-        const formData = new FormData();
-        formData.append("image1", blob, "snapshot.jpg");
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.src = video.src + "?t=" + new Date().getTime(); // force refresh
 
-        fetch("http://localhost:5000/verify", {
-          method: "POST",
-          body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
-          console.log(data);
-          if (data.verified) {
-            if (data.user !== lastUser) {
-              lastUser = data.user;
-              resultText.innerText = `✅ Verified: ${data.user}`;
-            }
-          } else {
-            if (lastUser !== null) {
-              lastUser = null;
-              resultText.innerText = "❌ Not Verified";
-            }
+  img.onload = () => {
+    context.drawImage(img, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob(blob => {
+      const formData = new FormData();
+      formData.append("image1", blob, "snapshot.jpg");
+
+      fetch("http://192.168.190.203:8000/verify", {
+        method: "POST",
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        console.log(data);
+        if (data.verified) {
+          if (data.user !== lastUser) {
+            lastUser = data.user;
+            resultText.innerText = `✅ Verified: ${data.user}`;
           }
-        })
-        .catch(err => {
-          console.error("Error during verification:", err);
-          resultText.innerText = "⚠️ Error occurred.";
-        })
-        .finally(() => {
-          isVerifying = false;
-        });
-      }, "image/jpeg");
-    }
+        } else {
+          lastUser = null;
+          resultText.innerText = "❌ Not Verified";
+        }
+      })
+      .catch(err => {
+        console.error("Error during verification:", err);
+        resultText.innerText = "⚠️ Error occurred.";
+      })
+      .finally(() => {
+        isVerifying = false;
+      });
+    }, "image/jpeg");
+  };
+
+  img.onerror = () => {
+    console.warn("Failed to load image for capture.");
+    isVerifying = false;
+  };
+}
+startAutoVerification();
   </script>
 </body>
 </html>

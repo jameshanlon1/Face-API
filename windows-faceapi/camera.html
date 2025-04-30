@@ -6,8 +6,14 @@
 </head>
 <body>
   <h2>Live Face Verification</h2>
+
+  <!-- Video element to show webcam -->
   <video id="video" width="300" height="225" autoplay></video><br>
+
+  <!-- Canvas to grab snapshots from video -->
   <canvas id="canvas" width="300" height="225" style="display: none;"></canvas>
+
+  <!-- Result will show here -->
   <p id="result">Waiting for verification...</p>
 
   <script>
@@ -19,28 +25,31 @@
     let isVerifying = false;
     let lastUser = null;
 
-    // Ask for camera access
+    // Ask for webcam permission and start stream
     navigator.mediaDevices.getUserMedia({ video: true })
       .then(stream => {
         video.srcObject = stream;
-        startAutoVerification();
+        startAutoVerification();  // run it every few seconds
       })
       .catch(err => {
         console.error("Camera access denied", err);
-        alert("Enable camera to use this feature.");
+        alert("You need to enable camera for this to work.");
       });
 
+    // Checks every 5 seconds if not already verifying
     function startAutoVerification() {
       setInterval(() => {
         if (!isVerifying) {
           isVerifying = true;
           captureAndSend();
         }
-      }, 5000); // every 5 seconds
+      }, 5000); // could be shorter or longer depending on use
     }
 
+    // Grab a frame from the video and send it to backend
     function captureAndSend() {
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
       canvas.toBlob(blob => {
         const formData = new FormData();
         formData.append("image1", blob, "snapshot.jpg");
@@ -51,7 +60,8 @@
         })
         .then(res => res.json())
         .then(data => {
-          console.log(data);
+          console.log(data);  // just for testing
+
           if (data.verified) {
             if (data.user !== lastUser) {
               lastUser = data.user;
@@ -65,8 +75,8 @@
           }
         })
         .catch(err => {
-          console.error("Error during verification:", err);
-          resultText.innerText = "⚠️ Error occurred.";
+          console.error("Error:", err);
+          resultText.innerText = "⚠️ Something went wrong.";
         })
         .finally(() => {
           isVerifying = false;

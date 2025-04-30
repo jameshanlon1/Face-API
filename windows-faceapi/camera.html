@@ -65,18 +65,18 @@
           if (data.verified) {
             if (data.user !== lastUser) {
               lastUser = data.user;
-              resultText.innerText = `✅ Verified: ${data.user}`;
+              resultText.innerText = `Verified: ${data.user}`;
             }
           } else {
             if (lastUser !== null) {
               lastUser = null;
-              resultText.innerText = "❌ Not Verified";
+              resultText.innerText = "Not Verified";
             }
           }
         })
         .catch(err => {
           console.error("Error:", err);
-          resultText.innerText = "⚠️ Something went wrong.";
+          resultText.innerText = "Something went wrong.";
         })
         .finally(() => {
           isVerifying = false;

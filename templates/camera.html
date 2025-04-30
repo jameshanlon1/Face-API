@@ -70,14 +70,14 @@ function captureAndSend() {
           console.log(data); // just for testing
 
           if (data.verified) {
-            resultText.innerText = `✅ Verified: ${data.user}`;
+            resultText.innerText = `Verified: ${data.user}`;
           } else {
-            resultText.innerText = "❌ Not Verified";
+            resultText.innerText = "Not Verified";
           }
         })
         .catch(err => {
           console.error("Verification error:", err);
-          resultText.innerText = "⚠️ Error during check.";
+          resultText.innerText = "Error during check.";
         })
         .finally(() => {
           isVerifying = false;
@@ -94,7 +94,7 @@ function captureAndSend() {
 
   img.onerror = (e) => {
     console.error("Couldn’t load MJPEG frame:", e);
-    resultText.innerText = "⚠️ Couldn't grab camera image.";
+    resultText.innerText = "Couldn't grab camera image.";
     isVerifying = false;
     img.src = "";  // cleanup again
   };
